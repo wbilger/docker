@@ -1,0 +1,79 @@
+#############################################################################################################################
+# Bilger HTPC Server - Docker Compose for DVR Functions                                                                     #
+#                                                                                                                           #
+#############################################################################################################################
+version: '3'
+
+#############################################################################################################################
+# SERVICES TO LAUNCH                                                                                                        #
+#############################################################################################################################
+services:
+
+  # -------------------------------------------------------------------------------------------------------------------------
+  #  XTeve - IPTV for Plex Media Server DVR
+  # -------------------------------------------------------------------------------------------------------------------------
+  xteve:
+    container_name: xteve
+    image: dnsforge/xteve:latest
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - ./config/xteve/config:/home/xteve/conf
+      - ./config/xteve/playlists:/home/xteve/playlists
+      - ./config/xteve/tmp:/tmp/xteve
+      - $HOME/data/Backup/htpc/xteve:/backup
+    environment:
+      - TZ=${TZ}
+
+  # -------------------------------------------------------------------------------------------------------------------------
+  #  XTeve - IPTV for Plex Media Server DVR for Movies and 24/7 channels
+  # -------------------------------------------------------------------------------------------------------------------------
+  xteve2:
+    container_name: xteve2
+    image: dnsforge/xteve:latest
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - ./config/xteve2/config:/home/xteve/conf
+      - ./config/xteve2/playlists:/home/xteve/playlists
+      - ./config/xteve2/tmp:/tmp/xteve
+      - $HOME/data/Backup/htpc/xteve2:/backup
+    environment:
+      - TZ=${TZ}
+      - XTEVE_PORT=34401
+
+
+  # -------------------------------------------------------------------------------------------------------------------------
+  #  TELLYTV - IPTV for Plex Media Server DVR
+  # -------------------------------------------------------------------------------------------------------------------------
+#  telly:
+#    container_name: telly
+#    image: tellytv/telly:dev-ffmpeg
+#    restart: unless-stopped
+#    ports:
+#      - 6077:6077
+#    volumes:
+#      - ./config/telly:/etc/telly
+#    environment:
+#      - TZ=${TZ}
+  # -------------------------------------------------------------------------------------------------------------------------
+  #  TELLYTV - IPTV for Plex Media Server DVR (US Channels)
+  # -------------------------------------------------------------------------------------------------------------------------
+#  telly-us:
+#    container_name: telly-us
+#    image: tellytv/telly:dev-ffmpeg
+#    restart: unless-stopped
+#    ports:
+#      - 6078:6078
+#    volumes:
+#      - ./config/telly-us:/etc/telly
+#    environment:
+#      - TZ=${TZ}
+
+#############################################################################################################################
+# NETWORKS #
+#############################################################################################################################
+networks:
+  default:
+    external:
+      name: media-server

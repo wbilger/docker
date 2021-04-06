@@ -1,0 +1,85 @@
+#############################################################################################################################
+# Bilger HTPC Ubuntu Server - Docker Compose for NextCloud                                                                  #
+#   Don't forget to 'docker network create media-server' before launch.                                                     #
+#                                                                                                                           #
+#   Container based media tools configuration                                                                               #
+#   Configuration items for this file are taken from the .env file                                                          #
+#   Have docker-compose.yml and .env in the same directory to launch the stack                                              #
+#############################################################################################################################
+version: '3'
+
+#############################################################################################################################
+# SERVICES TO LAUNCH                                                                                                        #
+#############################################################################################################################
+services:
+
+  # -------------------------------------------------------------------------------------------------------------------------
+  #  NEXTCLOUD_DB - MariaDB instance for NextCloud
+  # -------------------------------------------------------------------------------------------------------------------------
+  nextcloud_db:
+    container_name: nextcloud_db
+    image: ghcr.io/linuxserver/mariadb:latest
+    restart: unless-stopped
+    volumes:
+      - ./config/mariadb:/config
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+
+  # -------------------------------------------------------------------------------------------------------------------------
+  #  NEXTCLOUD - NextCloud cloud file server
+  # -------------------------------------------------------------------------------------------------------------------------
+  nextcloud:
+    container_name: nextcloud
+    image: linuxserver/nextcloud:latest
+    restart: unless-stopped
+    depends_on:
+      - nextcloud_db
+    ports:
+      - 8843:443
+    volumes:
+      - ./config/nextcloud/config:/config
+      - ./config/nextcloud/data:/data
+      - $HOME/docker:$HOME/docker
+      - $HOME/data:$HOME/data
+      - $HOME/media:$HOME/media
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - MYSQL_HOST=${MYSQL_HOST}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+
+  # -------------------------------------------------------------------------------------------------------------------------
+  #  CODE - Collabora Office Development Edition
+  # -------------------------------------------------------------------------------------------------------------------------
+  # collabora:
+#    container_name: collabora
+#    image: collabora/code:latest
+#    restart: unless-stopped
+#    ports:
+#      - 9980:9980
+#   # volumes:
+#     # - ./config/collabora/config:/config
+#    environment:
+#      # - domain=
+#      - domain=https://
+#      - extra_params=--o:ssl.enable=false
+#      - PUID=${PUID}
+#      - PGID=${PGID}
+#      - TZ=${TZ}
+
+#############################################################################################################################
+# NETWORKS #
+#############################################################################################################################
+networks:
+  default:
+    external:
+      name: media-server

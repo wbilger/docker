@@ -1,0 +1,43 @@
+############################################################################################################################
+# Bilger HTPC Ubuntu Server - Docker Compose for HomeAssistant                                                              #
+#   Don't forget to 'docker network create media-server' before launch.                                                     #
+#                                                                                                                           #
+#   Container based media tools configuration                                                                               #
+#   Configuration items for this file are taken from the .env file                                                          #
+#   Have docker-compose.yml and .env in the same directory to launch the stack                                              #
+#############################################################################################################################
+version: '3'
+
+#############################################################################################################################
+# SERVICES TO LAUNCH                                                                                                        #
+#############################################################################################################################
+services:
+
+  # -------------------------------------------------------------------------------------------------------------------------
+  #   GOOGLE-ASSISTANT-WEBSERVER - Google Assistant Web Server for HomeAssistant home automation server
+  # -------------------------------------------------------------------------------------------------------------------------
+  google-assistant-webserver:
+    container_name: google-assistant-webserver
+    image: robwolff3/ga-webserver
+    restart: on-failure
+    volumes:
+      - ./config/assistant-webserver/config:/config
+      - ./config/assistant-webserver/assistant:/root/.config/google-assistant-library/assistant
+    ports:
+      - 9324:9324
+      - 5000:5000
+    environment:
+      - CLIENT_SECRET=${CLIENT_SECRET}
+      - DEVICE_MODEL_ID=${DEVICE_MODEL_ID}
+      - PROJECT_ID=${PROJECT_ID}
+      - PYTHONIOENCODING=utf-8
+    devices:
+      - "/dev/snd:/dev/snd:rwm"  
+
+#############################################################################################################################
+# NETWORKS #
+#############################################################################################################################
+networks: 
+  default:
+    external:
+      name: media-server

@@ -1,0 +1,100 @@
+#############################################################################################################################
+## Docker Compose for book downloading and content server                                                                   #
+#   Don't forget to 'docker network create media-server' before launch.                                                     #
+#                                                                                                                           #
+#############################################################################################################################
+
+version: '3'
+
+#############################################################################################################################
+# SERVICES TO LAUNCH #
+#############################################################################################################################
+services:
+
+  # -------------------------------------------------------------------------------------------------------------------------
+  #  READARR - Book, Audio Book, Magazine auto downloader 
+  # -------------------------------------------------------------------------------------------------------------------------
+  readarr:
+    container_name: readarr
+    image: hotio/readarr:nightly
+    #image: linuxserver/readarr:latest
+    restart: unless-stopped
+    ports:
+      - 8787:8787
+    volumes:
+      - ./config/readarr:/config
+      - $HOME/data/Backup/htpc/readarr:/backup
+      - /etc/localtime:/etc/localtime:ro
+      - $HOME/media/books:/mnt/books
+      - $HOME/media/download/torrents/complete:/download/torrents/complete
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+
+  # -------------------------------------------------------------------------------------------------------------------------
+  #  CALIBRE - Ebook Management software
+  #  -------------------------------------------------------------------------------------------------------------------------
+  calibre:
+    image: ghcr.io/linuxserver/calibre
+    container_name: calibre
+    restart: unless-stopped
+    ports:
+      - 8082:8080
+      - 8081:8081
+    volumes:
+      - ./config/calibre:/config
+      - $HOME/media/books:/mnt/books
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+
+  # -------------------------------------------------------------------------------------------------------------------------
+  #  CALIBRE-WEB - ebook calibre web content server and database editor
+  # -------------------------------------------------------------------------------------------------------------------------
+  calibre-web:
+    container_name: calibre-web
+    image: linuxserver/calibre-web:latest
+    #image: linuxserver/calibre-web:0.6.6-ls51
+    restart: unless-stopped
+    volumes:
+      - ./config/calibre-web:/config
+      - $HOME/media/books/books:/books
+    ports:
+      - 8083:8083
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+
+  # -------------------------------------------------------------------------------------------------------------------------
+  #  LAZYLIBRARIAN - ebook downloader with calibredb
+  # -------------------------------------------------------------------------------------------------------------------------
+  #lazylibrarian:
+  #  container_name: lazylibrarian
+  #  #image: thraxis/lazylibrarian-calibre:latest
+  #  image: linuxserver/lazylibrarian:latest
+  #  restart: unless-stopped
+  #  volumes:
+  #    - ./config/lazylibrarian:/config
+  #    - $HOME/media/download/torrents/complete:/downloads
+  #    - $HOME/media/download/torrents:/downloads_manual
+  #    - $HOME/media/books/books:/books
+  #    - $HOME/media/books/magazines:/magazines
+  #    - $HOME/media/books/audio:/audiobooks
+  #  ports:
+  #    - 5299:5299
+  #  environment:
+  #    - PUID=${PUID}
+  #    - PGID=${PGID}
+  #    - TZ=${TZ}
+  #    - DOCKER_MODS=linuxserver/calibre-web:calibre
+
+#############################################################################################################################
+# NETWORKS #
+#############################################################################################################################
+networks:
+  default:
+    external:
+      name: media-server

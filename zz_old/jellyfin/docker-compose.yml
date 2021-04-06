@@ -1,0 +1,74 @@
+#############################################################################################################################
+# Bilger HTPC Server - Docker Compose for Jellyfin Media Server                                                             #
+#                                                                                                                           #
+#############################################################################################################################
+version: '3'
+
+#############################################################################################################################
+# SERVICES TO LAUNCH                                                                                                        #
+#############################################################################################################################
+services:
+
+  # -------------------------------------------------------------------------------------------------------------------------
+  #  JELLYFIN - Jellyfin Media Server
+  # -------------------------------------------------------------------------------------------------------------------------
+  jellyfin:
+    container_name: jellyfin
+    image: jellyfin/jellyfin:latest
+    restart: unless-stopped
+    network_mode: host
+    #user: ${PUID}:${PGID}
+    user: "1000:107"
+    volumes:
+      - ./config/jellyfin/config:/config
+      - ./config/jellyfin/cache:/cache
+      - $HOME/media:/media:ro
+    devices:
+      - /dev/dri:/dev/dri
+    environment:
+      - TZ=${TZ}
+      - JELLYFIN_PublishedServerUrl=${URL_JELLYFIN}
+
+  nextpvr:
+    image: nextpvr/nextpvr_amd64:stable
+    container_name: nextpvr
+    restart: unless-stopped
+    network_mode: host
+    user: ${PUID}:${PGID}
+    #ports:
+    #  - 8866:8866
+    #  - 16891:16981/udp
+    volumes:
+      - ./config/nextpvr/config:/config
+      - ./config/nextpvr/buffer:/buffer
+      - $HOME/media/videos/TV-DVR:/recordings
+    devices:
+      - /dev/dri:/dev/dri
+    environment:
+      - TZ=${TZ}
+
+#  tvheadend:
+#    image: ghcr.io/linuxserver/tvheadend
+#    container_name: tvheadend
+#    restart: unless-stopped
+#    ports:
+#      - 9981:9981
+#      - 9982:9982
+#      #- RUN_OPTS=<run options here> #optional
+#    volumes:
+#      - ./config/tvheadend:/config
+#      - $HOME/media/videos/TV-Headend:/recordings
+#    devices:
+#      - /dev/dri:/dev/dri
+#    environment:
+#      - PUID=${PUID}
+#      - PGID=${PGID}
+#      - TZ=${TZ}
+
+#############################################################################################################################
+# NETWORKS #
+#############################################################################################################################
+networks:
+  default:
+    external:
+      name: media-server

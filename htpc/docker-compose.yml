@@ -1,0 +1,283 @@
+#############################################################################################################################
+## Bilger HTPC Media Server - Docker Compose for media download and sorting tools for Plex Media Server                     #
+#   Don't forget to 'docker network create media-server' before launch.                                                     #
+#                                                                                                                           #
+#   Container based media tools configuration                                                                               #
+#   Configuration items for this file are taken from the .env file                                                          #
+#   Have docker-compose.yml and .env in the same directory to launch the stack                                              #
+#############################################################################################################################
+
+version: '3'
+
+#############################################################################################################################
+# SERVICES TO LAUNCH #
+#############################################################################################################################
+services:
+
+  # -------------------------------------------------------------------------------------------------------------------------
+  #   ORGANIZR - media management console - landing spot for bilger.duckdns.org 
+  # -------------------------------------------------------------------------------------------------------------------------
+  organizr:
+    container_name: organizr
+    image: organizr/organizr:latest
+    restart: always
+    volumes:
+      - ./config/organizr:/config
+    ports:
+      - 8880:80
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      
+  # -------------------------------------------------------------------------------------------------------------------------
+  #  DELUGE (VPN) - Deluge torrent downloader with PIA VPN enabled
+  # -------------------------------------------------------------------------------------------------------------------------
+  delugevpn:
+    container_name: delugevpn
+    image: binhex/arch-delugevpn:latest 
+    #image: ivanfilippov/arch-delugepvn:webui-autologin
+    restart: always
+    cap_add:
+      - NET_ADMIN
+    ports:
+      - 8112:8112
+      - 8118:8118
+      - 58846:58846
+    volumes:
+      - ./config/delugevpn:/config
+#      - ./usr/lib/python3.7:/usr/lib/python3.7
+      - /etc/localtime:/etc/localtime:ro
+      - $HOME/media/download:/download
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - LAN_NETWORK=192.168.1.0/24
+      - ENABLE_PRIVOXY=yes
+      - DEBUG=false
+      - UMASK=003
+      - DELUGE_AUTOLOGIN=yes
+      - VPN_ENABLED=yes
+      - VPN_PORT=1194
+      - VPN_PROTOCOL=udp
+      - VPN_PROV=${VPN_PROV}
+      - VPN_USER=${VPN_USER}
+      - VPN_PASS=${VPN_PASS}
+
+  # -------------------------------------------------------------------------------------------------------------------------
+  #  JACKETT - API suport for torrent trackers for sonarr/radarr 
+  # -------------------------------------------------------------------------------------------------------------------------
+  jackett:
+    container_name: jackett
+    image: linuxserver/jackett:latest
+    restart: unless-stopped
+    ports:
+      - 9117:9117
+    volumes:
+      - ./config/jackett:/config
+      - $HOME/media/download/torrents/complete:/download/torrents/complete
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+
+  # -------------------------------------------------------------------------------------------------------------------------
+  #  SONARR - TV Show auto downloader 
+  # -------------------------------------------------------------------------------------------------------------------------
+  sonarr:
+    container_name: sonarr
+    image: linuxserver/sonarr:latest
+    restart: unless-stopped
+    ports:
+      - 8989:8989
+    volumes:
+      - ./config/sonarr:/config
+      - $HOME/data/Backup/htpc/sonarr:/backup
+      - /etc/localtime:/etc/localtime:ro
+      - $HOME/media/videos:/mnt/videos
+      - $HOME/media/download/torrents/complete:/download/torrents/complete
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+
+  # -------------------------------------------------------------------------------------------------------------------------
+  #  SONARR (4k) - TV Show auto downloader for 4k TV Shows
+  # -------------------------------------------------------------------------------------------------------------------------
+  sonarr-4k:
+    container_name: sonarr-4k
+    image: linuxserver/sonarr:latest
+    restart: unless-stopped
+    ports:
+      - 8988:8988
+    volumes:
+      - ./config/sonarr-4k:/config
+      - $HOME/data/Backup/htpc/sonarr-4k:/backup
+      - /etc/localtime:/etc/localtime:ro
+      - $HOME/media/videos:/mnt/videos
+      - $HOME/media/download/torrents/complete:/download/torrents/complete
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+
+  # -------------------------------------------------------------------------------------------------------------------------
+  #  RADARR - Movie auto downloader 
+  # -------------------------------------------------------------------------------------------------------------------------
+  radarr:
+    container_name: radarr
+    image: linuxserver/radarr:nightly #latest
+    #image: linuxserver/radarr:latest
+    restart: unless-stopped
+    ports:
+      - 7878:7878
+    volumes:
+      - ./config/radarr:/config
+      - $HOME/data/Backup/htpc/radarr:/backup
+      - /etc/localtime:/etc/localtime:ro
+      - $HOME/media/videos:/mnt/videos
+      - $HOME/media/download/torrents/complete:/download/torrents/complete
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+
+  # -------------------------------------------------------------------------------------------------------------------------
+  #  RADARR (4k) - Movie auto downloader for 4k movies
+  # -------------------------------------------------------------------------------------------------------------------------
+  radarr-4k:
+    container_name: radarr-4k
+    image: linuxserver/radarr:nightly #latest
+    restart: unless-stopped
+    ports:
+      - 7879:7879
+    volumes:
+      - ./config/radarr-4k:/config
+      - $HOME/data/Backup/htpc/radarr-4k:/backup
+      - /etc/localtime:/etc/localtime:ro
+      - $HOME/media/videos:/mnt/videos
+      - $HOME/media/download/torrents/complete:/download/torrents/complete
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+
+  # -------------------------------------------------------------------------------------------------------------------------
+  #  LIDARR - Music auto downloader 
+  # -------------------------------------------------------------------------------------------------------------------------
+  lidarr:
+    container_name: lidarr
+    image: linuxserver/lidarr:latest
+    restart: unless-stopped
+    ports:
+      - 8686:8686
+    volumes:
+      - ./config/lidarr:/config
+      - $HOME/data/Backup/htpc/lidarr:/backup
+      - /etc/localtime:/etc/localtime:ro
+      - $HOME/media/music:/mnt/music
+      - $HOME/media/download/torrents/complete:/download/torrents/complete
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+
+  # -------------------------------------------------------------------------------------------------------------------------
+  #  TAUTULLI - Plex usage monitor
+  #  -------------------------------------------------------------------------------------------------------------------------
+  tautulli:
+    container_name: tautulli
+    image: linuxserver/tautulli:latest
+    #image: linuxserver/tautulli:develop #(nightly)
+    restart: unless-stopped
+    ports:
+      - 8181:8181
+    volumes:
+      - ./config/tautulli:/config
+      - $HOME/data/Backup/htpc/tautulli:/config/backups
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+
+  # -------------------------------------------------------------------------------------------------------------------------
+  #  OMBI - Plex requests 
+  # -------------------------------------------------------------------------------------------------------------------------
+  #ombi:
+  #  container_name: ombi
+  #  image: linuxserver/ombi:latest
+  #  restart: unless-stopped
+  #  ports:
+  #    - 3579:3579
+  #  volumes:
+  #    - ./config/ombi:/config
+  #    - /etc/localtime:/etc/localtime:ro
+  #  environment:
+  #    - PUID=${PUID}
+  #    - PGID=${PGID}
+  #    - TZ=${TZ}
+
+  # -------------------------------------------------------------------------------------------------------------------------
+  #  OVERSEER - Plex requests 
+  # -------------------------------------------------------------------------------------------------------------------------
+  overseer:
+    container_name: overseer
+    image: sctx/overseerr:latest
+    restart: unless-stopped
+    ports:
+      - 5055:5055
+    volumes:
+      - ./config/overseer:/app/config
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - LOG_LEVEL=info
+
+  # -------------------------------------------------------------------------------------------------------------------------
+  #  HANDBRAKE - tool for converting video from nearly any format to a selection of modern, widely supported codecs.
+  #  -------------------------------------------------------------------------------------------------------------------------
+  handbrake:
+    container_name: handbrake
+    image: jlesage/handbrake:latest
+    restart: unless-stopped
+    network_mode: bridge
+    ports:
+      - 5800:5800
+      - 5900:5900
+    #deploy:
+    #  resources:
+    #    limits:
+    #      cpus: '1'
+    volumes:
+      - ./config/handbrake:/config
+      - $HOME/media:/storage:ro
+      - $HOME/media/download/torrents:/torrents:ro
+      - $HOME/media/download/torrents/complete:/output
+      - $HOME/media/videos/zHandbrake/480p:/watch
+      - $HOME/media/videos/zHandbrake/720p:/watch2
+      - $HOME/media/videos/zHandbrake/1080p:/watch3
+      - $HOME/media/videos/zHandbrake/265_720p:/watch4
+      - $HOME/media/videos/zHandbrake/265_1080p:/watch5
+    #devices:
+    #INCREASES FILE SIZE AND MINIMAL SPEED INCREASE  - /dev/dri:/dev/dri	
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - AUTOMATED_CONVERSION_KEEP_SOURCE=0
+      - "AUTOMATED_CONVERSION_PRESET=Plex/Fast 480p30"
+      - "AUTOMATED_CONVERSION_PRESET_2=Plex/H.264 MKV 720p30"
+      - "AUTOMATED_CONVERSION_PRESET_3=Plex/H.264 MKV 1080p30 5.1"
+      - "AUTOMATED_CONVERSION_PRESET_4=Plex/H.265 MKV 720p30 5.1"
+      - "AUTOMATED_CONVERSION_PRESET_5=Plex/H.265 MKV 1080p30 5.1"
+
+#############################################################################################################################
+# NETWORKS #
+#############################################################################################################################
+networks:
+  default:
+    external:
+      name: media-server
